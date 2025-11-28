@@ -7,9 +7,31 @@ import java.util.*;
 
 public class CollisionUtil {
     private static final Map<UUID, Boolean> PREVIOUS_INSIDE = new HashMap<>();
+    private static final int MAX_SUBSTEPS = 20;
+    private static final double MIN_VELOCITY_FOR_SUBSTEPS = 1.0;
 
     public static Vec3d applyCollision(Vec3d position, Vec3d move, CollisionBox box) {
+        double moveLength = move.length();
+        if (moveLength > MIN_VELOCITY_FOR_SUBSTEPS) {
+            int substeps = Math.min(MAX_SUBSTEPS, (int) Math.ceil(moveLength / 0.5));
+            Vec3d remainingMove = move;
+            Vec3d currentPos = position;
 
+            for (int i = 0; i < substeps && remainingMove.lengthSquared() > 1e-12; i++) {
+                Vec3d substepMove = remainingMove.multiply(1.0 / (substeps - i));
+                Vec3d adjustedSubstep = applyCollisionSingleStep(currentPos, substepMove, box);
+
+                currentPos = currentPos.add(adjustedSubstep);
+                remainingMove = remainingMove.subtract(substepMove).add(adjustedSubstep.subtract(substepMove));
+            }
+
+            return currentPos.subtract(position);
+        } else {
+            return applyCollisionSingleStep(position, move, box);
+        }
+    }
+
+    private static Vec3d applyCollisionSingleStep(Vec3d position, Vec3d move, CollisionBox box) {
         Vec3d targetPos = position.add(move);
         Vec3d local = targetPos.subtract(box.pos());
 

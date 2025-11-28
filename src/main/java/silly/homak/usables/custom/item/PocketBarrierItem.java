@@ -47,30 +47,30 @@ public class PocketBarrierItem extends Item {
                 // X - axis ones
                 CollisionBoxManagerServer.addBox((ServerWorld) world,
                         pos.add(BARRIER_SCALE / 2, 0, 0), Vec3d.ZERO,
-                        new Vec3d(2, BARRIER_SCALE + 2, BARRIER_SCALE + 1),
+                        new Vec3d(1, BARRIER_SCALE + 2, BARRIER_SCALE + 1),
                         DURATION * 20);
                 CollisionBoxManagerServer.addBox((ServerWorld) world,
                         pos.subtract(BARRIER_SCALE / 2, 0, 0), Vec3d.ZERO,
-                        new Vec3d(2, BARRIER_SCALE + 2, BARRIER_SCALE + 1),
+                        new Vec3d(1, BARRIER_SCALE + 2, BARRIER_SCALE + 1),
                         DURATION * 20);
 
                 // Z - axis ones
                 CollisionBoxManagerServer.addBox((ServerWorld) world,
                         pos.add(0, 0, BARRIER_SCALE / 2), Vec3d.ZERO,
-                        new Vec3d(BARRIER_SCALE + 1, BARRIER_SCALE + 2, 2),
+                        new Vec3d(BARRIER_SCALE + 1, BARRIER_SCALE + 2, 1),
                         DURATION * 20);
                 CollisionBoxManagerServer.addBox((ServerWorld) world,
                         pos.subtract(0, 0, BARRIER_SCALE / 2), Vec3d.ZERO,
-                        new Vec3d(BARRIER_SCALE + 1, BARRIER_SCALE + 2, 2),
+                        new Vec3d(BARRIER_SCALE + 1, BARRIER_SCALE + 2, 1),
                         DURATION * 20);
                 // Y - axis ones
                 CollisionBoxManagerServer.addBox((ServerWorld) world,
                         pos.add(0, BARRIER_SCALE / 2, 0), Vec3d.ZERO,
-                        new Vec3d(BARRIER_SCALE + 1, 2, BARRIER_SCALE + 2),
+                        new Vec3d(BARRIER_SCALE + 1, 1, BARRIER_SCALE + 1),
                         DURATION * 20);
                 CollisionBoxManagerServer.addBox((ServerWorld) world,
                         pos.subtract(0, BARRIER_SCALE / 2, 0), Vec3d.ZERO,
-                        new Vec3d(BARRIER_SCALE + 1, 2, BARRIER_SCALE + 1),
+                        new Vec3d(BARRIER_SCALE + 1, 1, BARRIER_SCALE + 1),
                         DURATION * 20);
             });
         }

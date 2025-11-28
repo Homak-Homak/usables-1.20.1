@@ -40,9 +40,9 @@ public class CollisionBoxManagerClient {
         LIBRARY_CubeRenderer.schedule(pos.add(0, 1, 0), 20, 20, 20,
                 Vec3d.ZERO, 1f,
                 Identifier.of(UsablesMain.MOD_ID, "textures/effect/pocket_barrier.png"),
-                15 * 60,
-                true, 15 * 60 - 10,
-                true, 15 * 60 - 10, -0.25f,
+                25 * 60,
+                true, 25 * 60 - 10,
+                true, 25 * 60 - 10, -0.25f,
                 0.75f);
     }
     public static void quadEffect(MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buf, PacketSender sender) {
