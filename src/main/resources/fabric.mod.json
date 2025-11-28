@@ -3,14 +3,10 @@
 	"id": "usables",
 	"version": "${version}",
 	"name": "Usables",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "The fuck? Homak made a mod?",
 	"authors": [
 		"Homak"
 	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
 	"license": "CC0-1.0",
 	"icon": "assets/usables/icon.png",
 	"environment": "*",

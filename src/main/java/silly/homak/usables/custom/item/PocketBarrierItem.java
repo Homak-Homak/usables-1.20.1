@@ -8,20 +8,16 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import silly.homak.usables.UsablesMain;
-import silly.homak.usables.client.TickSchedulerClient;
-import silly.homak.usables.client.render.LIBRARY_CubeRenderer;
 import silly.homak.usables.common.TickSchedulerServer;
 import silly.homak.usables.common.barrier.CollisionBoxManagerServer;
 import silly.homak.usables.server.PacketHandler;
 
 public class PocketBarrierItem extends Item {
-    private static final float BARRIER_SCALE = 15f;
-    private static final int DURATION = 15;
+    private static final float BARRIER_SCALE = 20f;
+    private static final int DURATION = 25;
     private static final int DELAY_TICKS = 5 * 20;
     public PocketBarrierItem(Settings settings) {
         super(settings);
@@ -78,6 +74,7 @@ public class PocketBarrierItem extends Item {
                         DURATION * 20);
             });
         }
+        if (!user.isCreative()) user.getItemCooldownManager().set(this, (DELAY_TICKS + DURATION * 20 + 160 * 20));
         return TypedActionResult.success(user.getStackInHand(hand));
     }
 

@@ -37,13 +37,13 @@ public class CollisionBoxManagerClient {
     public static void cubeEffect(MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buf, PacketSender sender) {
         Vector3f vector3f = buf.readVector3f();
         Vec3d pos = new Vec3d(vector3f);
-        LIBRARY_CubeRenderer.schedule(pos.add(0, 1, 0), 15, 15, 15,
+        LIBRARY_CubeRenderer.schedule(pos.add(0, 1, 0), 20, 20, 20,
                 Vec3d.ZERO, 1f,
                 Identifier.of(UsablesMain.MOD_ID, "textures/effect/pocket_barrier.png"),
                 15 * 60,
                 true, 15 * 60 - 10,
                 true, 15 * 60 - 10, -0.25f,
-                0.85f);
+                0.75f);
     }
     public static void quadEffect(MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buf, PacketSender sender) {
         Vector3f vector3f = buf.readVector3f();
