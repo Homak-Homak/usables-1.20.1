@@ -7,7 +7,7 @@ import java.util.*;
 
 public class CollisionUtil {
     private static final Map<UUID, Boolean> PREVIOUS_INSIDE = new HashMap<>();
-    private static final int MAX_SUBSTEPS = 20;
+    private static final int MAX_SUBSTEPS = 40;
     private static final double MIN_VELOCITY_FOR_SUBSTEPS = 1.0;
 
     public static Vec3d applyCollision(Vec3d position, Vec3d move, CollisionBox box) {
