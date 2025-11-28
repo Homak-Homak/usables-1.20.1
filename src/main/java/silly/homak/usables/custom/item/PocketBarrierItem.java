@@ -16,7 +16,7 @@ import silly.homak.usables.common.barrier.CollisionBoxManagerServer;
 import silly.homak.usables.server.PacketHandler;
 
 public class PocketBarrierItem extends Item {
-    private static final float BARRIER_SCALE = 20f;
+    private static final float BARRIER_SCALE = 15f;
     private static final int DURATION = 25;
     private static final int DELAY_TICKS = 5 * 20;
     public PocketBarrierItem(Settings settings) {

@@ -37,7 +37,7 @@ public class CollisionBoxManagerClient {
     public static void cubeEffect(MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buf, PacketSender sender) {
         Vector3f vector3f = buf.readVector3f();
         Vec3d pos = new Vec3d(vector3f);
-        LIBRARY_CubeRenderer.schedule(pos.add(0, 1, 0), 20, 20, 20,
+        LIBRARY_CubeRenderer.schedule(pos.add(0, 1, 0), 15, 15, 15,
                 Vec3d.ZERO, 1f,
                 Identifier.of(UsablesMain.MOD_ID, "textures/effect/pocket_barrier.png"),
                 25 * 60,
