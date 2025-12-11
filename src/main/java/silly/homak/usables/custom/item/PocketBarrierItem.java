@@ -1,5 +1,7 @@
 package silly.homak.usables.custom.item;
 
+import com.sun.jna.platform.unix.X11;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -91,13 +93,12 @@ public class PocketBarrierItem extends Item {
                 nbt.putFloat("box_scale", BASE_BARRIER_SCALE + 1.0f);
             }
 
-            ItemStack newStack = stack.copy();
-            newStack.setNbt(nbt);
-
-            slot.setStackNoCallbacks(newStack);
-
             if (player.getWorld().isClient()) {
-                player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 0.5f, 1.0f);
+                player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 0.25f, 1.0f);
+            }
+
+            if (Screen.hasControlDown()) {
+                slot.setStackNoCallbacks(stack);
             }
 
             return true;
