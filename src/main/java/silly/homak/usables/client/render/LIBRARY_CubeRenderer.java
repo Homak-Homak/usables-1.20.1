@@ -2,6 +2,7 @@ package silly.homak.usables.client.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -16,6 +17,12 @@ public final class LIBRARY_CubeRenderer {
 
     private static final List<Cube> queuedCubes = new ArrayList<>();
     private static final List<Cube> cubesToRemove = new ArrayList<>();
+    private static int tickCounter = 0;
+    private static float partialTicks = 0f;
+
+    static {
+        init();
+    }
 
     public static void schedule(Vec3d pos, float width, float height, float depth,
                                 Vec3d rotation, float scale, Identifier texture,
@@ -29,10 +36,32 @@ public final class LIBRARY_CubeRenderer {
         }
     }
 
+    public static void clientTick() {
+        synchronized (queuedCubes) {
+            if (queuedCubes.isEmpty()) return;
+
+            tickCounter++;
+            cubesToRemove.clear();
+            for (Cube cube : queuedCubes) {
+                if (!MinecraftClient.getInstance().isPaused() || !MinecraftClient.getInstance().isInSingleplayer()) {
+                    cube.prevDuration = cube.duration;
+                    cube.duration--;
+                }
+                if (cube.duration <= 0) {
+                    cubesToRemove.add(cube);
+                }
+            }
+            queuedCubes.removeAll(cubesToRemove);
+        }
+    }
+
     public static void init() {
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             synchronized (queuedCubes) {
                 if (queuedCubes.isEmpty()) return;
+
+                // Get partial ticks from the render context
+                partialTicks = context.tickDelta();
 
                 MatrixStack matrices = context.matrixStack();
                 Vec3d camPos = context.camera().getPos();
@@ -44,28 +73,33 @@ public final class LIBRARY_CubeRenderer {
 
                 RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
 
-                cubesToRemove.clear();
-
                 for (Cube cube : queuedCubes) {
+                    // Calculate interpolated duration for smooth effects
+                    // At the start of a tick: partialTicks = 0, we use current duration
+                    // At the end of a tick: partialTicks = 1, we use next duration
+                    float interpolatedDuration = cube.prevDuration + (cube.duration - cube.prevDuration) * partialTicks;
+                    float interpolatedTicksLived = cube.maxDuration - interpolatedDuration;
+
                     float alpha = cube.baseAlpha;
                     if (cube.fade) {
-                        int ticksLived = cube.maxDuration - cube.duration;
-                        if (ticksLived >= cube.fadeStart) {
+                        if (interpolatedTicksLived >= cube.fadeStart) {
                             int fadeTicks = cube.maxDuration - cube.fadeStart;
-                            alpha = cube.baseAlpha * ((float) cube.duration / (float) fadeTicks);
+                            float remainingDuration = Math.max(0, interpolatedDuration - cube.fadeStart);
+                            alpha = cube.baseAlpha * (remainingDuration / fadeTicks);
                             if (alpha < 0f) alpha = 0f;
                         }
                     }
 
                     float scale = cube.scale;
                     if (cube.scaleUp) {
-                        int ticksLived = cube.maxDuration - cube.duration;
-                        if (ticksLived >= cube.scaleStart) {
-                            float t = (ticksLived - cube.scaleStart) / (float) (cube.maxDuration - cube.scaleStart);
+                        if (interpolatedTicksLived >= cube.scaleStart) {
+                            float t = (interpolatedTicksLived - cube.scaleStart) / (cube.maxDuration - cube.scaleStart);
                             if (t > 1f) t = 1f;
+                            // Smooth easing using t²
                             scale = cube.scale * (1f + (cube.scaleFactor - 1f) * t * t);
                         }
                     }
+
                     RenderSystem.setShaderTexture(0, cube.texture);
                     RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
@@ -74,7 +108,6 @@ public final class LIBRARY_CubeRenderer {
                     matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) cube.rotation.y));
                     matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees((float) cube.rotation.x));
                     matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((float) cube.rotation.z));
-
 
                     matrices.scale(scale, scale, scale);
 
@@ -126,15 +159,7 @@ public final class LIBRARY_CubeRenderer {
 
                     Tessellator.getInstance().draw();
                     matrices.pop();
-
-                    cube.duration--;
-                    if (cube.duration <= 0) {
-                        cubesToRemove.add(cube);
-                    }
                 }
-
-                // Remove expired cubes
-                queuedCubes.removeAll(cubesToRemove);
 
                 RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
                 RenderSystem.enableCull();
@@ -150,6 +175,7 @@ public final class LIBRARY_CubeRenderer {
         float scale;
         Identifier texture;
         int duration, maxDuration;
+        int prevDuration; // For interpolation
         boolean fade;
         int fadeStart;
         boolean scaleUp;
@@ -168,6 +194,7 @@ public final class LIBRARY_CubeRenderer {
             this.scale = s;
             this.texture = tex;
             this.duration = duration;
+            this.prevDuration = duration;
             this.maxDuration = duration;
             this.fade = fade;
             this.fadeStart = fadeStart;

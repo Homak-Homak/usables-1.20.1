@@ -42,7 +42,6 @@ public class TickSchedulerServer {
             repeatingTasksToAdd.clear();
         }
 
-        // Process one-time tasks
         for (ScheduledTask task : tasks) {
             task.ticksLeft--;
             if (task.ticksLeft <= 0) {

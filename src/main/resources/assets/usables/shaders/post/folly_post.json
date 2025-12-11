@@ -1,0 +1,17 @@
+{
+  "targets": [
+    "final"
+  ],
+  "passes": [
+    {
+      "name": "usables:folly",
+      "intarget": "minecraft:main",
+      "outtarget": "final"
+    },
+    {
+      "name": "blit",
+      "intarget": "final",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}

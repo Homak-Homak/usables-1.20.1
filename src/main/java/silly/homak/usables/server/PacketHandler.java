@@ -18,8 +18,7 @@ import silly.homak.usables.common.barrier.CollisionBoxManagerClient;
 import silly.homak.usables.common.barrier.CollisionBoxManagerServer;
 import silly.homak.usables.common.barrier.PacketBoxUtil;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class PacketHandler {
     public static final Identifier ADD = new Identifier(UsablesMain.MOD_ID, "add_box");
@@ -27,6 +26,7 @@ public class PacketHandler {
     public static final Identifier SYNC = new Identifier(UsablesMain.MOD_ID, "sync_boxes");
     public static final Identifier CUBE_EFFECT = new Identifier(UsablesMain.MOD_ID, "cube_effect");
     public static final Identifier QUAD_EFFECT = new Identifier(UsablesMain.MOD_ID, "quad_effect");
+    public static final Identifier INSIDE_STATUS = new Identifier(UsablesMain.MOD_ID, "inside_status");
 
     public static void registerPackets() {
         ClientPlayNetworking.registerGlobalReceiver(ADD, CollisionBoxManagerClient::onAdd);
@@ -34,15 +34,16 @@ public class PacketHandler {
         ClientPlayNetworking.registerGlobalReceiver(SYNC, CollisionBoxManagerClient::onSync);
         ClientPlayNetworking.registerGlobalReceiver(CUBE_EFFECT, CollisionBoxManagerClient::cubeEffect);
         ClientPlayNetworking.registerGlobalReceiver(QUAD_EFFECT, CollisionBoxManagerClient::quadEffect);
+        ClientPlayNetworking.registerGlobalReceiver(INSIDE_STATUS, CollisionBoxManagerClient::onInsideStatus);
     }
 
     public static void sendCubeEffect(ServerWorld world, Vec3d pos) {
         PacketByteBuf buf = PacketByteBufs.create();
         buf.writeVector3f(pos.toVector3f());
         PacketBoxUtil.writeVec3d(buf, pos);
-            for (ServerPlayerEntity p : world.getPlayers()) {
-                ServerPlayNetworking.send(p, CUBE_EFFECT, buf);
-            }
+        for (ServerPlayerEntity p : world.getPlayers()) {
+            ServerPlayNetworking.send(p, CUBE_EFFECT, buf);
+        }
     }
 
     public static void sendQuadEffect(ServerWorld world, Vec3d pos) {
@@ -82,5 +83,19 @@ public class PacketHandler {
 
         ServerPlayNetworking.send(player, SYNC, buf);
     }
-}
 
+    public static void sendPlayerInsideStatus(ServerPlayerEntity player, Set<CollisionBox> changedBoxes, Set<CollisionBox> currentlyInside) {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        // Write number of boxes to update
+        buf.writeInt(changedBoxes.size());
+
+        // For each changed box, write box data and whether player is inside
+        for (CollisionBox box : changedBoxes) {
+            PacketBoxUtil.writeBox(buf, box);
+            buf.writeBoolean(currentlyInside.contains(box));
+        }
+
+        ServerPlayNetworking.send(player, INSIDE_STATUS, buf);
+    }
+}

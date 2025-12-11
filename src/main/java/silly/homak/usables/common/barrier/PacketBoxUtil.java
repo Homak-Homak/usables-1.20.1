@@ -4,7 +4,6 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.math.Vec3d;
 
 public class PacketBoxUtil {
-
     public static void writeBox(PacketByteBuf buf, CollisionBox box) {
         writeVec3d(buf, box.pos());
         writeVec3d(buf, box.rot());
@@ -34,4 +33,3 @@ public class PacketBoxUtil {
         );
     }
 }
-

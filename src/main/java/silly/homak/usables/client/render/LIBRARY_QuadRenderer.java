@@ -2,6 +2,7 @@ package silly.homak.usables.client.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormats;
@@ -18,6 +19,12 @@ public final class LIBRARY_QuadRenderer {
 
     private static final List<Quad> queuedQuads = new ArrayList<>();
     private static final List<Quad> quadsToRemove = new ArrayList<>();
+    private static int tickCounter = 0;
+    private static float partialTicks = 0f;
+
+    static {
+        init();
+    }
 
     public static void schedule(Vec3d pos, float width, float height,
                                 Vec3d rotation, float scale, Identifier texture,
@@ -31,10 +38,35 @@ public final class LIBRARY_QuadRenderer {
         }
     }
 
+    public static void clientTick() {
+        synchronized (queuedQuads) {
+            if (queuedQuads.isEmpty()) return;
+
+            tickCounter++;
+
+            // Update quad durations once per tick
+            quadsToRemove.clear();
+            for (Quad quad : queuedQuads) {
+                if (!MinecraftClient.getInstance().isPaused() || !MinecraftClient.getInstance().isInSingleplayer()){
+                    quad.prevDuration = quad.duration;
+                    quad.duration--;
+
+                    if (quad.duration <= 0) {
+                        quadsToRemove.add(quad);
+                    }
+                }
+            }
+            queuedQuads.removeAll(quadsToRemove);
+        }
+    }
+
     public static void init() {
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             synchronized (queuedQuads) {
                 if (queuedQuads.isEmpty()) return;
+
+                // Get partial ticks from the render context
+                partialTicks = context.tickDelta();
 
                 MatrixStack matrices = context.matrixStack();
                 Vec3d camPos = context.camera().getPos();
@@ -46,28 +78,33 @@ public final class LIBRARY_QuadRenderer {
 
                 RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
 
-                quadsToRemove.clear();
-
                 for (Quad q : queuedQuads) {
+                    // Calculate interpolated duration for smooth effects
+                    // At the start of a tick: partialTicks = 0, we use current duration
+                    // At the end of a tick: partialTicks = 1, we use next duration
+                    float interpolatedDuration = q.prevDuration + (q.duration - q.prevDuration) * partialTicks;
+                    float interpolatedTicksLived = q.maxDuration - interpolatedDuration;
+
                     float alpha = q.baseAlpha;
                     if (q.fade) {
-                        int ticksLived = q.maxDuration - q.duration;
-                        if (ticksLived >= q.fadeStart) {
+                        if (interpolatedTicksLived >= q.fadeStart) {
                             int fadeTicks = q.maxDuration - q.fadeStart;
-                            alpha = q.baseAlpha * ((float) q.duration / (float) fadeTicks);
+                            float remainingDuration = Math.max(0, interpolatedDuration - q.fadeStart);
+                            alpha = q.baseAlpha * (remainingDuration / fadeTicks);
                             if (alpha < 0f) alpha = 0f;
                         }
                     }
 
                     float scale = q.scale;
                     if (q.scaleUp) {
-                        int ticksLived = q.maxDuration - q.duration;
-                        if (ticksLived >= q.scaleStart) {
-                            float t = (ticksLived - q.scaleStart) / (float) (q.maxDuration - q.scaleStart);
+                        if (interpolatedTicksLived >= q.scaleStart) {
+                            float t = (interpolatedTicksLived - q.scaleStart) / (q.maxDuration - q.scaleStart);
                             if (t > 1f) t = 1f;
+                            // Smooth easing using t²
                             scale = q.scale * (1f + (q.scaleFactor - 1f) * t * t);
                         }
                     }
+
                     RenderSystem.setShaderTexture(0, q.texture);
                     RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
@@ -94,15 +131,7 @@ public final class LIBRARY_QuadRenderer {
 
                     Tessellator.getInstance().draw();
                     matrices.pop();
-
-                    q.duration--;
-                    if (q.duration <= 0) {
-                        quadsToRemove.add(q);
-                    }
                 }
-
-                // Remove expired quads
-                queuedQuads.removeAll(quadsToRemove);
 
                 RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
                 RenderSystem.enableCull();
@@ -118,6 +147,7 @@ public final class LIBRARY_QuadRenderer {
         float scale;
         Identifier texture;
         int duration, maxDuration;
+        int prevDuration; // For interpolation
         boolean fade;
         int fadeStart;
         boolean scaleUp;
@@ -135,6 +165,7 @@ public final class LIBRARY_QuadRenderer {
             this.scale = s;
             this.texture = tex;
             this.duration = duration;
+            this.prevDuration = duration;
             this.maxDuration = duration;
             this.fade = fade;
             this.fadeStart = fadeStart;

@@ -1,6 +1,7 @@
 package silly.homak.usables.common.barrier;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
@@ -11,9 +12,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MidTickCollisionManager {
     private static final Map<ServerWorld, List<HighVelocityEntity>> TRACKED_ENTITIES = new ConcurrentHashMap<>();
-    private static final int PHASES_PER_TICK = 4; // Check 4 times per tick
-    private static final double HIGH_VELOCITY_THRESHOLD = 2.0; // 2 blocks/tick
-    private static final int MAX_TRACKING_TICKS = 20; // Stop tracking after 1 second
+    private static final int PHASES_PER_TICK = 4;
+    private static final double HIGH_VELOCITY_THRESHOLD = 2.0;
+    private static final double ENTITY_INSIDE_COLLISION_THRESHOLD = 0.5;
+    private static final int MAX_TRACKING_TICKS = 20;
 
     private static final Map<ServerWorld, Integer> CURRENT_PHASE = new ConcurrentHashMap<>();
 
@@ -54,8 +56,15 @@ public class MidTickCollisionManager {
                 continue;
             }
 
+            boolean isInsideCollision = isEntityInsideAnyCollision(entity);
+
             Vec3d originalVelocity = entity.getVelocity();
-            if (originalVelocity.lengthSquared() < 1e-6) {
+            double velocityLength = originalVelocity.length();
+
+            double removalThreshold = isInsideCollision ?
+                    ENTITY_INSIDE_COLLISION_THRESHOLD : 1e-6;
+
+            if (velocityLength < removalThreshold) {
                 toRemove.add(tracked);
                 continue;
             }
@@ -65,7 +74,9 @@ public class MidTickCollisionManager {
             Vec3d adjustedMove = phaseMove;
 
             for (CollisionBox box : CollisionBoxManagerServer.BOXES) {
-                adjustedMove = CollisionUtil.applyCollision(currentPos, adjustedMove, box);
+                UUID entityId = entity.getUuid();
+                adjustedMove = CollisionUtil.applyForceFieldContainment(currentPos, adjustedMove, box,
+                        entity instanceof PlayerEntity ? entityId : null);
             }
 
             if (!adjustedMove.equals(phaseMove)) {
@@ -124,6 +135,36 @@ public class MidTickCollisionManager {
 
         return worldEntities.stream()
                 .anyMatch(tracked -> tracked.entityId == entity.getId());
+    }
+
+    private static boolean isEntityInsideAnyCollision(Entity entity) {
+        for (CollisionBox box : CollisionBoxManagerServer.BOXES) {
+            if (isEntityInsideCollisionBox(entity, box)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isEntityInsideCollisionBox(Entity entity, CollisionBox box) {
+        Vec3d pos = entity.getPos().subtract(box.pos());
+        Vec3d rot = new Vec3d(
+                Math.toRadians(box.rot().x),
+                Math.toRadians(box.rot().y),
+                Math.toRadians(box.rot().z)
+        );
+
+        pos = CollisionUtil.rotateZ(pos, -rot.z);
+        pos = CollisionUtil.rotateX(pos, -rot.x);
+        pos = CollisionUtil.rotateY(pos, -rot.y);
+
+        double halfX = box.scale().x / 2.0 + 0.1;
+        double halfY = box.scale().y / 2.0 + 0.1;
+        double halfZ = box.scale().z / 2.0 + 0.1;
+
+        return Math.abs(pos.x) <= halfX &&
+                Math.abs(pos.y) <= halfY &&
+                Math.abs(pos.z) <= halfZ;
     }
 
     private static class HighVelocityEntity {
