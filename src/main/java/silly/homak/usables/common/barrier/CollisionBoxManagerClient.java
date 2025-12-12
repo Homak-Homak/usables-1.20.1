@@ -59,8 +59,8 @@ public class CollisionBoxManagerClient {
                 Vec3d.ZERO, 1f,
                 Identifier.of(UsablesMain.MOD_ID, "textures/effect/pocket_barrier.png"),
                 25 * 20,
-                true, 25 * 60 - 10,
-                true, 25 * 60 - 10, -0.25f,
+                true, 25 * 20 - 10,
+                true, 25 * 20 - 10, -0.15f,
                 0.75f);
 
         createCubeEdgeParticles(client, center, barrierScale);
