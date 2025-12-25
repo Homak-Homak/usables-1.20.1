@@ -1,8 +1,9 @@
 package silly.homak.usables.custom.item;
 
-import com.sun.jna.platform.unix.X11;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
@@ -34,6 +35,14 @@ public class PocketBarrierItem extends Item {
 
     public PocketBarrierItem(Settings settings) {
         super(settings);
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
+        if (entity instanceof LivingEntity living) {
+            living.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 10, 1));
+        }
+        super.inventoryTick(stack, world, entity, slot, selected);
     }
 
     @Override
@@ -114,7 +123,7 @@ public class PocketBarrierItem extends Item {
             float boxScale = nbt.getFloat("box_scale");
             tooltip.add(Text.of("Creates a barrier the scale of " + (int) boxScale + " blocks").copy().formatted(Formatting.YELLOW));
         } else {
-            tooltip.add(Text.of("Creates a barrier the scale of " + (int) BASE_BARRIER_SCALE + " blocks").copy().formatted(Formatting.YELLOW));
+            tooltip.add(Text.of("Creates a barrier the scale of " + (int) BASE_BARRIER_SCALE + " blocks").copy().formatted(Formatting.byColorIndex(1)));
         }
         super.appendTooltip(stack, world, tooltip, context);
     }

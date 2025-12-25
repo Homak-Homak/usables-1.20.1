@@ -3,6 +3,7 @@
   "package": "silly.homak.usables.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "WaterBucketMixin"
   ],
   "injectors": {
     "defaultRequire": 1
